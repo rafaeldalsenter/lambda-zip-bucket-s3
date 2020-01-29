@@ -1,5 +1,12 @@
 # lambda-zip-bucket-s3
-⚡ Function Lambda para Zipar Buckets do Amazon S3
+⚡ Function Lambda para Zipar Buckets do Amazon S3. Para acioná-lo, deverão ser passados os seguintes parâmetros:
+```
+"event": {
+      "bucketNameSource" : "bucket-source-test",
+      "bucketNameDest" : "bucket-dest-test",
+      "archiveName" : "test.zip"
+}
+```
 
 | CodeFactor |
 |:---:|
