@@ -2,101 +2,63 @@ const AWS = require('aws-sdk');
 const Archiver = require('archiver');
 const stream = require('stream');
 const s3 = new AWS.S3();
+const streamPassThrough = new stream.PassThrough();
 
-
-const uploadToStream = (bucket, name) => {
-	let pass = new stream.PassThrough();
-    
+const uploadToS3 = (bucket, name) =>  
     s3.upload({ 
         Bucket: bucket, 
         Key: name, 
-        Body: pass 
+        Body: streamPassThrough 
     }, (error, data) => { 
         if (error) {
             throw error;
         }
-        console.log(`File uploaded successfully. ${data.Location}`);
     });
-    
-    return pass;
-};
 
-const listAllKeys = (params, out = []) => 
+const listAllObjectsFromS3 = (params, out = []) => 
     new Promise((resolve, reject) => {
         s3.listObjectsV2(params)
             .promise()
             .then(({Contents, IsTruncated, NextContinuationToken}) => {
                 Contents.forEach(content => out.push(content.Key));
-                !IsTruncated ? resolve(out) : resolve(listAllKeys(Object.assign(params, {ContinuationToken: NextContinuationToken}), out));
+                !IsTruncated ? resolve(out) : resolve(listAllObjectsFromS3(Object.assign(params, {ContinuationToken: NextContinuationToken}), out));
             })
             .catch(reject);
     });
 
 exports.handler = async (event) => {
-    
-    var bucketNameSource = 'rafaeldalsenter-teste';
-    var bucketName = 'rafaeldalsenter-teste';
-    var archiveName = 'teste' + '.zip';
-    
-    
-    let params = { 
-        Bucket: bucketNameSource
-    }
-    
-    let s3Objects = await listAllKeys(params);
 
-    var listArchivesFromBucket = await Promise.all(
-            s3Objects.map(archive => new Promise((resolve, reject) => {
-                s3.getObject({ 
-                    Bucket: bucketNameSource, 
-                    Key: archive 
-                })
-                .then(data => resolve({ data: data.Body, name: `${archive.split('/').pop()}` }));
-            }
-            )))
-            .catch(error => { console.log(error); });
+    let s3Objects = await listAllObjectsFromS3({ 
+        Bucket: event.bucketNameSource
+    });
 
+    let archivesFromBucket = await Promise.all(
+        s3Objects.map(archive => new Promise((resolve, reject) => {
+            s3.getObject({ 
+                Bucket: event.bucketNameSource, 
+                Key: archive 
+            }, (error, data) => {
+                if(error){
+                    throw error;
+                }
+                resolve({ data: data.Body, name: `${archive.split('/').pop()}` });
+            });
+        }))
+    );
 
-    // let listArchivesFromBucket = await Promise.all(s3Objects)
-    //     .then(results => 
-    //         results.forEach(archive => {
-    //             s3.getObject({ 
-    //                 Bucket: bucketNameSource, 
-    //                 Key: archive 
-    //             }, (error, data) => {
-    //                 if (error) {
-    //                     throw error;
-    //                 }
-    //                 resolve({ data: data.Body, name: `${archive.split('/').pop()}` });
-    //             })
-    //         })
-    //     )
-    //     .catch(error => { throw error });
+    var upload = uploadToS3(event.bucketNameDest, event.archiveName);	
 
-    console.log('Arquivos:');
-    console.log(listArchivesFromBucket);
-    listArchivesFromBucket.forEach(item => console.log(item));
-    
-    // var listArchivesFromBucket = await Promise.all(
-    //         s3Objects.map(archive => new Promise((resolve, reject) => {
-    //             s3.getObject({ Bucket: bucketNameSource, Key: archive })
-    //                 .then(data => resolve({ data: data.Body, name: `${archive.split('/').pop()}` }));
-    //         }
-    //         )))
-    //         .catch(error => { console.log(error); });
-            
-    // await new Promise((resolve, reject) => {
-    //     var myStream = uploadToStream(bucketName, archiveName);	
-    //     var archive = Archiver('zip');
-    //     archive.on('error', err => { throw new Error(err); });
+    var archive = Archiver('zip');
+    archive.on('error', err => { throw new Error(err); });
 
-    //     myStream.on('close', resolve);
-    //     myStream.on('end', resolve);
-    //     myStream.on('error', reject);
+    await new Promise((resolve, reject) => {
+        upload.on('close', resolve);
+        upload.on('end', resolve);
+        upload.on('error', reject);
+        archive.pipe(streamPassThrough);	
+        archivesFromBucket.forEach(item => archive.append(item.data, { name: item.name }));
+        archive.finalize();
+    }).catch(error => { throw error; });
 
-    //     archive.pipe(myStream);	
-    //     listArchivesFromBucket.forEach(item => archive.append(item.data, { name: item.name }));
-    //     archive.finalize();
-    // }).catch(error => { console.log(error); });
-    
+    await upload.promise();
 };
