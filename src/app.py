@@ -41,7 +41,7 @@ def lambda_handler(event, context):
 
         for page in objects.page_size(amount_objects).pages():
 
-            object = aws_ext.get_object_summary(bucketNameDest, archiveNameDest)
+            zip_file = aws_ext.get_object_summary(bucketNameDest, archiveNameDest)
 
             print("Upload +{} files to {}...".format(amount_objects, archiveNameDest))
 
@@ -50,9 +50,9 @@ def lambda_handler(event, context):
                     zf.writestr(x.key, x.get()['Body'].read())
             
             if(archivePublicAccess):
-                object.put(Body=binary.getvalue(), ACL='public-read')
+                zip_file.put(Body=binary.getvalue(), ACL='public-read')
             else:
-                object.put(Body=binary.getvalue()) 
+                zip_file.put(Body=binary.getvalue()) 
 
         link = aws_ext.link_from_object(bucketNameDest, archiveNameDest)
 
@@ -61,4 +61,4 @@ def lambda_handler(event, context):
     except KeyError as k_err:
         return function_return(False, "Parameter " + str(k_err) + " is invalid!")
     except Exception as err:
-        return function_return(False, "Exception :" + str(err)) 
+        return function_return(False, "Exception :" + str(err))
