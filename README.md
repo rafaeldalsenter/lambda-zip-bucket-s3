@@ -17,6 +17,6 @@ Parâmetros:
 - archive_public_access: Passar true, se desejar que o arquivo zipado seja público.
 - amount_of_files_to_upload: Caso queira fazer o Upload dos arquivos no ZIP em páginas, especificar a quantidade por página. Caso contrário, preencher o valor 0.
 
-| CodeFactor |
-|:---:|
-|[![CodeFactor](https://www.codefactor.io/repository/github/rafaeldalsenter/lambda-zip-bucket-s3/badge?s=f6c7b966804d5fda1d060c0d0513f16c90e7fb33)](https://www.codefactor.io/repository/github/rafaeldalsenter/lambda-zip-bucket-s3)|
+| CodeFactor | Deploy |
+|:---:|:---:|
+|[![CodeFactor](https://www.codefactor.io/repository/github/rafaeldalsenter/lambda-zip-bucket-s3/badge?s=f6c7b966804d5fda1d060c0d0513f16c90e7fb33)](https://www.codefactor.io/repository/github/rafaeldalsenter/lambda-zip-bucket-s3)|![Lambda deploy](https://github.com/rafaeldalsenter/lambda-zip-bucket-s3/workflows/Lambda%20deploy/badge.svg)
