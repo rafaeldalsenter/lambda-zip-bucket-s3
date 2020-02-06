@@ -1,12 +1,10 @@
-name: Python Lambda Deploy
+name: Lambda deploy
 
 on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - name: Deploy
+    - name: Lambda deploy
       uses: mariamrf/py-lambda-action@v0.0.2
