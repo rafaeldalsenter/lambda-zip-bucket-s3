@@ -1,2 +1,0 @@
-name: Py Lambda Deploy
-  uses: mariamrf/py-lambda-action@v0.0.2
